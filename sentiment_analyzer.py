@@ -12,21 +12,26 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 import credentials
+
 lemmatizer = WordNetLemmatizer()
 
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
+nltk.download("punkt")
+nltk.download("stopwords")
+nltk.download("wordnet")
 
 analyzer = SentimentIntensityAnalyzer()
 
+
 def clean_and_tokenize(text):
-    text = re.sub(r'http\S+', '', text)
-    text = re.sub(f"[{string.punctuation}]", '', text)
+    text = re.sub(r"http\S+", "", text)
+    text = re.sub(f"[{string.punctuation}]", "", text)
     tokens = word_tokenize(text)
-    stop_words = set(stopwords.words('english'))
-    tokens = [lemmatizer.lemmatize(word) for word in tokens if word.lower() not in stop_words]
-    return ' '.join(tokens)
+    stop_words = set(stopwords.words("english"))
+    tokens = [
+        lemmatizer.lemmatize(word) for word in tokens if word.lower() not in stop_words
+    ]
+    return " ".join(tokens)
+
 
 def analyze_sentiment():
     query = query_entry.get()
@@ -40,25 +45,33 @@ def analyze_sentiment():
         querystring = {"searchTerms": query, "maxTweets": str(num_tweets)}
         headers = {
             "X-RapidAPI-Key": credentials.X_KEY,
-            "X-RapidAPI-Host": "twitter-scraper2.p.rapidapi.com"
+            "X-RapidAPI-Host": "twitter-scraper2.p.rapidapi.com",
         }
         response = requests.get(url, headers=headers, params=querystring)
         data = response.json()
 
-        if 'data' in data and len(data['data']) > 0:
+        if "data" in data and len(data["data"]) > 0:
             intermediate_label.config(text="Data received. Cleaning data...")
             sentiment_labels = []
             sentiment_text = []
 
-            for tweet_data in data['data']:
-                tweet_text = tweet_data['tweet']['full_text']
+            for tweet_data in data["data"]:
+                tweet_text = tweet_data["tweet"]["full_text"]
                 cleaned_text = clean_and_tokenize(tweet_text)
 
                 sentiment = analyzer.polarity_scores(cleaned_text)
-                sentiment_label = "Positive" if sentiment['compound'] > 0 else "Negative" if sentiment['compound'] < 0 else "Neutral"
+                sentiment_label = (
+                    "Positive"
+                    if sentiment["compound"] > 0
+                    else "Negative"
+                    if sentiment["compound"] < 0
+                    else "Neutral"
+                )
 
                 sentiment_labels.append(sentiment_label)
-                sentiment_text.append(f"Tweet: {tweet_text}\nSentiment: {sentiment_label}")
+                sentiment_text.append(
+                    f"Tweet: {tweet_text}\nSentiment: {sentiment_label}"
+                )
 
             intermediate_label.config(text="Analysis completed.")
             display_results(sentiment_labels, sentiment_text)
@@ -71,11 +84,12 @@ def analyze_sentiment():
 
     analysis_thread = threading.Thread(target=analysis_task)
     analysis_thread.start()
-    
+
 
 def clean_tweet_text(text):
     cleaned_text = html.unescape(text)
     return cleaned_text
+
 
 def display_results(sentiment_labels, sentiment_text):
     result_text.config(state="normal")
@@ -109,11 +123,12 @@ def display_results(sentiment_labels, sentiment_text):
 
     result_text.config(state="disabled")
 
+
 def plot_sentiment_analysis(sentiment_labels, sentiment_text):
     fig, ax = plt.subplots(figsize=(12, 8))
 
     # Assign colors to sentiment labels
-    color_mapping = {"Positive": 'g', "Negative": 'r', "Neutral": 'b'}
+    color_mapping = {"Positive": "g", "Negative": "r", "Neutral": "b"}
     colors = [color_mapping[label] for label in sentiment_labels]
 
     ax.bar(sentiment_labels, [1] * len(sentiment_labels), color=colors)
@@ -124,7 +139,8 @@ def plot_sentiment_analysis(sentiment_labels, sentiment_text):
     plt.tight_layout()
 
     for i, txt in enumerate(sentiment_text):
-        ax.text(sentiment_labels[i], 1.1, txt, fontsize=10, ha='center', va='center')
+        ax.text(sentiment_labels[i], 1.1, txt, fontsize=10, ha="center", va="center")
+
 
 app = tk.Tk()
 app.title("Sentiment Analysis App")
